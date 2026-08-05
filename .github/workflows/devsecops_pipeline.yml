@@ -1,17 +1,25 @@
 name: secret-scanning
-on: push
+on:
+  push:
+    branches:
+      - demo
+    paths-ignore:
+      - 'README.md'
 jobs:
   devsecops_pipeline:
     runs-on: ubuntu-latest
     steps:
       - name: code checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v3
+
+      - name: run gitleaks
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-        
-
-        
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v8.2.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
