@@ -30,4 +30,5 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           command: test
-          args: --file=requirement.txt # Explicitly points Snyk to your singular file name
+          # Forces Snyk to recognize your custom filename as a Python pip manifest
+          args: --file=requirement.txt --package-manager=pip
