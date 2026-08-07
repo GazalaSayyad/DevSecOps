@@ -2,9 +2,15 @@ name: devsecops-pipeline
 on: 
   push:
     branches:
-      - 'main'
+      - 'demo'
     paths-ignore:
       - '**/README.md'
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write # needed for signing the images with GitHub OIDC Token
+  
 jobs:
   devsecops-pipeline:
     runs-on: ubuntu-latest
@@ -72,12 +78,7 @@ jobs:
          image: '${{ vars.DOCKERHUB_USERNAME }}/helloworld-demo-python:latest'
          artifact-name: sbom.spdx
 
-    - name: Install Cosign
-      uses: sigstore/cosign-installer@v4.1.0
-      
-    - name: Check install!
-      run: cosign version
-
+    
     - name: Docker Push
       run: |
          docker push ${{ vars.DOCKERHUB_USERNAME }}/helloworld-demo-python:${{ github.sha }}
@@ -88,11 +89,6 @@ jobs:
       run: |
         DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ vars.DOCKERHUB_USERNAME }}/helloworld-demo-python:${{ github.sha }})
         echo "digest=$DIGEST" >> $GITHUB_OUTPUT
-
-    - name: Cosign Sign Image
-      env:
-        COSIGN_EXPERIMENTAL: "1"
-      run: cosign sign --yes "${{ steps.digest.outputs.digest }}"
 
     - name: Docker Container
       run: docker run -itd ${{ vars.DOCKERHUB_USERNAME }}/helloworld-demo-python:latest
