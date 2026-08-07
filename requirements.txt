@@ -4,3 +4,4 @@ colorama==0.4.6
 # Development & Quality Tools
 pytest==8.3.4
 black==24.10.0
+gunicorn
