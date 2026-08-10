@@ -7,7 +7,7 @@ on:
       - '**/README.md'
 
 permissions:
-  contents: readkubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/refs/heads/main/job.yaml
+  contents: read
   packages: write
   id-token: write # needed for signing the images with GitHub OIDC Token
   
@@ -74,7 +74,8 @@ jobs:
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     - name: Docker Build
-      run: docker build --no-cache -t ${{ secrets.DOCKERHUB_USERNAME }}/helloworld-demo-python:${{ github.sha }} -t ${{ secrets.DOCKERHUB_USERNAME }}/helloworld-demo-python:latest 
+      run: docker build --no-cache -t ${{ secrets.DOCKERHUB_USERNAME }}/helloworld-demo-python:${{ github.sha }} -t ${{ secrets.DOCKERHUB_USERNAME }}/helloworld-demo-python:latest .
+
     - name: Docker Images
       run: docker images
 
@@ -129,10 +130,10 @@ jobs:
 
     - name: Run Kube-bench
       run: |  
-        kubectl delete job Kube-bench --ignore-not--found=true
+        kubectl delete job kube-bench --ignore-not-found=true
         kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/refs/heads/main/job.yaml
         kubectl wait --for=condition=complete job/kube-bench --timeout=180s
-        echo "================Kube-bench Results========================="
+        echo "================ Kube-bench Results ================"
         kubectl logs job/kube-bench
 
     - name: Create Deployment and Service
