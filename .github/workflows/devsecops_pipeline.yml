@@ -132,3 +132,16 @@ jobs:
       run: |
         kubectl apply -f k8s/deployment.yaml
         kubectl apply -f k8s/service.yaml
+        kubectl wait --for=condition=ready pod -l app=hello-world-python
+
+    - name: View Deployment and Service
+      run: |
+        kubectl get deployments
+        kubectl get service   
+      
+    - name: Test service URLs
+      run: |
+        minikube service list
+        minikube service my-service --url
+        echo "---------------- Opening the service -------------"
+        curl $(minikube service my-service --url)
