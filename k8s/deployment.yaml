@@ -17,5 +17,6 @@ spec:
       containers:
       - name: helloworld-demo-python
         image: gazalashaikh/helloworld-demo-python:latest
+        imagePullPolicy: Always 
         ports:
         - containerPort: 8080
