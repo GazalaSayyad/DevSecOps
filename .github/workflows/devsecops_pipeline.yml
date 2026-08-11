@@ -77,7 +77,7 @@ jobs:
       uses: docker/login-action@v4
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }} # FIXED: Swapped vars to secrets per earlier logs
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}# As per use case create docker PAT token now it is custom
 
     - name: Docker Build
       run: docker build --no-cache -t ${{ secrets.DOCKERHUB_USERNAME }}/helloworld-demo-python:${{ github.sha }} -t ${{ secrets.DOCKERHUB_USERNAME }}/helloworld-demo-python:latest .
