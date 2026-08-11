@@ -176,12 +176,12 @@ jobs:
     - name: Try the cluster
       run: kubectl get pods -A
 
-    - name: Run Kube-bench
-      run: |  
+    - name: Run Kube-Bench
+      run: |
         kubectl delete job kube-bench --ignore-not-found=true
-        kubectl apply -f https://githubusercontent.com
+        kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/refs/heads/main/job.yaml
         kubectl wait --for=condition=complete job/kube-bench --timeout=180s
-        echo "================ Kube-bench Results ================"
+        echo "======= Kube-bench Results ====="
         kubectl logs job/kube-bench
 
     - name: Create Deployment and Service
