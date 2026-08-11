@@ -10,6 +10,7 @@ permissions:
   contents: read
   packages: write
   id-token: write # needed for signing the images with GitHub OIDC Token
+  security-events: write # FIXED: Missing permission required by upload-sarif
   
 jobs:
   devsecops-pipeline:
