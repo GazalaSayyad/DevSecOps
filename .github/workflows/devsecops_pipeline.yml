@@ -9,10 +9,11 @@ on:
 permissions:
   contents: read
   packages: write
-  id-token: write # needed for signing the images with GitHub OIDC Token
-  security-events: write # FIXED: Missing permission required by upload-sarif
+  id-token: write        # needed for signing the images with GitHub OIDC Token
+  security-events: write # required for uploading SARIF scan metrics to the Security tab
   
 jobs:
+  # JOB 1: Application Security Scanning
   devsecops-pipeline:
     runs-on: ubuntu-latest
     steps:
@@ -31,13 +32,11 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-    # FIXED: Re-added Python setup so Snyk can resolve library trees
     - name: Set up Python Environment
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    # FIXED: Restored package mapping layers
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -45,22 +44,45 @@ jobs:
 
     - name: Run Snyk to check for vulnerabilities
       uses: snyk/actions/python@master
-      continue-on-error: true # Prevents pipeline blocks during vulnerability testing
+      continue-on-error: true 
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}        
       with:
         command: test
-        # FIXED: Feeds explicit arrays to resolve empty tracking logs ("")
         args: '["--file=requirements.txt", "--package-manager=pip"]'
 
-    
-    # - name: ZAP Scan
-    #   uses: zaproxy/action-full-scan@v0.13.0
-    #   with:
-    #     target: 'https://ginandjuice.shop' 
+  # JOB 2: Infrastructure as Code (IaC) Security Scanning (Runs in parallel with Job 1)
+  infra-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Code Checkout
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
 
+    - name: Checkov GitHub Action
+      uses: bridgecrewio/checkov-action@v12
+      with:
+        output_format: cli,sarif
+        output_file_path: console,results.sarif
+        soft_fail: true
+
+    - name: Upload SARIF file to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v4
+      if: success() || failure()
+      with:
+        sarif_file: results.sarif
+
+    - name: Upload Scan Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: checkov-report
+        path: results.sarif
+
+  # JOB 3: Container Build and Vulnerability Check 
+  # This waits until BOTH application and infrastructure scans pass successfully
   docker-pipeline:
-    needs: devsecops-pipeline
+    needs: [devsecops-pipeline, infra-pipeline]
     runs-on: ubuntu-latest
     steps:
     - name: Code Checkout
@@ -77,7 +99,7 @@ jobs:
     - name: Login to Docker Hub
       uses: docker/login-action@v4
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }} # FIXED: Swapped vars to secrets per earlier logs
+        username: ${{ secrets.DOCKERHUB_USERNAME }} 
         password: ${{ secrets.DOCKERHUB_TOKEN }} # As per use case create docker PAT token now it is custom
 
     - name: Docker Build
@@ -86,7 +108,6 @@ jobs:
     - name: Docker Images
       run: docker images
 
-    # FIXED: Swapped out vars context for secrets context to prevent auth failures
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@v0.36.0
       with:
@@ -121,7 +142,6 @@ jobs:
     - name: Check install!
       run: cosign version
 
-
     - name: Docker Push
       run: |
          docker push ${{ secrets.DOCKERHUB_USERNAME }}/helloworld-demo-python:${{ github.sha }}
@@ -134,11 +154,12 @@ jobs:
         echo "digest=$DIGEST" >> $GITHUB_OUTPUT
 
     - name: Docker Container
-      run: docker run -d ${{ secrets.DOCKERHUB_USERNAME }}/helloworld-demo-python:latest # FIXED: Standardized background runner flag
+      run: docker run -d ${{ secrets.DOCKERHUB_USERNAME }}/helloworld-demo-python:latest 
 
     - name: Docker Container Lists
       run: docker ps
 
+  # JOB 4: Kubernetes Cluster Setup and Testing
   k8s-pipeline:
     needs: docker-pipeline
     runs-on: ubuntu-latest
@@ -155,7 +176,6 @@ jobs:
     - name: Try the cluster
       run: kubectl get pods -A
 
-    # FIXED: Re-added the complete job template manifest link path
     - name: Run Kube-bench
       run: |  
         kubectl delete job kube-bench --ignore-not-found=true
@@ -168,7 +188,6 @@ jobs:
       run: |
         kubectl apply -f k8s/deployment.yaml
         kubectl apply -f k8s/service.yaml
-        # kubectl rollout restart deployment/helloworld-deployment
         kubectl wait --for=condition=ready pod -l app=helloworld
 
     - name: View Deployment and Service
