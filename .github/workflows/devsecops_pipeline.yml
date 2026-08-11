@@ -52,6 +52,12 @@ jobs:
         # FIXED: Feeds explicit arrays to resolve empty tracking logs ("")
         args: '["--file=requirements.txt", "--package-manager=pip"]'
 
+    
+    - name: ZAP Scan
+      uses: zaproxy/action-full-scan@v0.13.0
+      with:
+        target: 'https://ginandjuice.shop/' 
+
   docker-pipeline:
     needs: devsecops-pipeline
     runs-on: ubuntu-latest
