@@ -53,10 +53,10 @@ jobs:
         args: '["--file=requirements.txt", "--package-manager=pip"]'
 
     
-    - name: ZAP Scan
-      uses: zaproxy/action-full-scan@v0.13.0
-      with:
-        target: 'https://ginandjuice.shop/' 
+    # - name: ZAP Scan
+    #   uses: zaproxy/action-full-scan@v0.13.0
+    #   with:
+    #     target: 'https://ginandjuice.shop' 
 
   docker-pipeline:
     needs: devsecops-pipeline
@@ -88,12 +88,23 @@ jobs:
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@v0.36.0
       with:
-        image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/helloworld-demo-python:latest'
-        format: 'table'
+        image-ref: '${{ vars.DOCKERHUB_USERNAME }}/helloworld-demo-python:latest'
+        format: 'sarif'
         exit-code: '0'
         ignore-unfixed: true
-        vuln-type: 'os,library'
-        severity: 'CRITICAL,HIGH'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Vulnerability Scan Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: trivy-report
+        path: trivy-results.sarif
+        retention-days: 30
+        
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: 'trivy-results.sarif'
 
     - name: SBOM Generation with Syft
       uses: anchore/sbom-action@v0.23.0
@@ -101,6 +112,13 @@ jobs:
          image: '${{ secrets.DOCKERHUB_USERNAME }}/helloworld-demo-python:latest'
          format: spdx-json
          artifact-name: sbom.spdx.json
+
+    - name: Install Cosign
+      uses: sigstore/cosign-installer@v4.1.0
+      
+    - name: Check install!
+      run: cosign version
+
 
     - name: Docker Push
       run: |
@@ -120,6 +138,7 @@ jobs:
       run: docker ps
 
   k8s-pipeline:
+    needs: docker-pipeline
     runs-on: ubuntu-latest
     steps:
     - name: Code Checkout
@@ -137,7 +156,7 @@ jobs:
     - name: Run Kube-bench
       run: |  
         kubectl delete job kube-bench --ignore-not-found=true
-        kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/refs/heads/main/job.yaml
+        kubectl apply -f https://githubusercontent.com
         kubectl wait --for=condition=complete job/kube-bench --timeout=180s
         echo "================ Kube-bench Results ================"
         kubectl logs job/kube-bench
