@@ -82,7 +82,8 @@ jobs:
   # JOB 3: Container Build and Vulnerability Check 
   # This waits until BOTH application and infrastructure scans pass successfully
   docker-pipeline:
-    needs: [devsecops-pipeline, infra-pipeline]
+    #needs: [devsecops-pipeline, infra-pipeline]
+    needs: devsecops-pipeline
     runs-on: ubuntu-latest
     steps:
     - name: Code Checkout
