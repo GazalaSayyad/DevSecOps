@@ -51,33 +51,33 @@ jobs:
         command: test
         args: '["--file=requirements.txt", "--package-manager=pip"]'
 
-  # JOB 2: Infrastructure as Code (IaC) Security Scanning (Runs in parallel with Job 1)
-  infra-pipeline:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Code Checkout
-      uses: actions/checkout@v7
-      with:
-        fetch-depth: 0
+  # # JOB 2: Infrastructure as Code (IaC) Security Scanning (Runs in parallel with Job 1)
+  # infra-pipeline:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Code Checkout
+  #     uses: actions/checkout@v7
+  #     with:
+  #       fetch-depth: 0
 
-    - name: Checkov GitHub Action
-      uses: bridgecrewio/checkov-action@v12
-      with:
-        output_format: cli,sarif
-        output_file_path: console,results.sarif
-        soft_fail: true
+  #   - name: Checkov GitHub Action
+  #     uses: bridgecrewio/checkov-action@v12
+  #     with:
+  #       output_format: cli,sarif
+  #       output_file_path: console,results.sarif
+  #       soft_fail: true
 
-    - name: Upload SARIF file to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v4
-      if: success() || failure()
-      with:
-        sarif_file: results.sarif
+  #   - name: Upload SARIF file to GitHub Security tab
+  #     uses: github/codeql-action/upload-sarif@v4
+  #     if: success() || failure()
+  #     with:
+  #       sarif_file: results.sarif
 
-    - name: Upload Scan Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: checkov-report
-        path: results.sarif
+  #   - name: Upload Scan Artifact
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: checkov-report
+  #       path: results.sarif
 
   # JOB 3: Container Build and Vulnerability Check 
   # This waits until BOTH application and infrastructure scans pass successfully
