@@ -1,26 +1,30 @@
-"""Top-level implementation of the helloworld program."""
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
-import argparse
-import sys
+class MyHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b'''
+          ##         .
+    ## ## ##        ==
+ ## ## ## ## ##    ===
+/"""""""""""""""""\___/ ===
+{                       /  ===-
+\______ O           __/
+ \    \         __/
+  \____\_______/
 
 
+Hello from Docker Gazala S! 
+''')
 
+def run():
+    print('Starting server...')
+    server_address = ('', 8080)
+    httpd = HTTPServer(server_address, MyHandler)
+    print('Server started!')
+    httpd.serve_forever()
 
-parser = argparse.ArgumentParser(
-        description='A simple example program to print a friendly greeting.')
-parser.add_argument('--version', action='version',
-        version='helloworld ' + helloworld.__version__)
-
-
-def main(argv=None):
-    if argv is None:
-        argv = sys.argv
-
-    # The helloworld program doesn't expect any arguments.
-    # This just checks for the special --version and --help arguments and
-    # ensures the user hasn't passed any other unrecognized arguments.
-    parser.parse_args(argv[1:])
-
-    print("Hello, world")
-
-    return 0
+if __name__ == '__main__':
+    run()

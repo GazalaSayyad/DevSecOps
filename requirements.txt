@@ -1,0 +1,7 @@
+# Application Dependencies
+colorama==0.4.6
+
+# Development & Quality Tools
+pytest==8.3.4
+black>=26.3.1
+gunicorn
